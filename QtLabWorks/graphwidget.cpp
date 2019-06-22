@@ -1,3 +1,5 @@
+#include <QCoreApplication>
+#include <QPushButton>
 #include "graphwidget.h"
 #include "rasterwindow.h"
 #include "graph.h"
@@ -17,18 +19,21 @@
 
 using namespace std;
 
-GraphVisualization::GraphVisualization(WeightedDirectedGraph &gr)
+GraphVisualization::GraphVisualization(WeightedDirectedGraph &gr, vector<Edge> edges, Node start, Node end)
 {
 	setTitle("Graph");
 	resize(Height, Height);
-	graph = gr;
+	_graph = gr;
+	_edges = edges;
+	_start = start;
+	_end = end;
 }
 
 void GraphVisualization::render(QPainter* p)
 {
-	int N = graph.GetVerticesNumber();
+	int N = _graph.GetVerticesNumber();
 	vector<QPoint> qVertices(N);
-	auto vertices = graph.GetVertices();
+	auto vertices = _graph.GetVertices();
 
 	p->translate(width() / 2, height() / 2);
 
@@ -47,25 +52,45 @@ void GraphVisualization::render(QPainter* p)
 	for (int i = 0; i < N; i++) {
 		const QRect rectangle = QRect(qVertices[i].x() - r, qVertices[i].y() - r, 2 * r, 2 * r);
 
+		if (vertices[i] == _start || vertices[i] == _end) {
+			p->setBrush(QColor(0,0,255));
+		}
+		else {
+			p->setBrush(QColor(255, 0, 0));
+		}
 		p->drawEllipse(qVertices[i], r, r);
 		p->drawText(rectangle, Qt::AlignCenter, tr(std::to_string(vertices[i].GetValue()).c_str()));
 	}
 
 	for (int i = 0; i < N; i++)
 	{
-		vector<Edge> edges = graph.GetEdges(vertices[i]);
+		vector<Edge> edges = _graph.GetEdges(vertices[i]);
 		for (vector<Edge>::iterator eIt = edges.begin(); eIt != edges.end(); eIt++) {
 			for (int j = 0; j < N; j++)
 			{
+				auto isHighlighted = false;
+				for (size_t k = 0; k < _edges.size(); k++)
+				{
+					if (_edges[k].GetDestination() == eIt->GetDestination()
+						&& _edges[k].GetSource() == eIt->GetSource())
+						isHighlighted = true;
+				}
+
 				if (eIt->GetDestination() == vertices[j])
-					drawArrow(p, qVertices[i], qVertices[j], std::to_string(eIt->GetWeight()).c_str());
+					drawArrow(p, qVertices[i], qVertices[j], std::to_string(eIt->GetWeight()).c_str(), isHighlighted);
 			}
 		}
 	}
 }
-
-void GraphVisualization::drawArrow(QPainter *p, QPoint s, QPoint d, const char * text)
+void GraphVisualization::drawArrow(QPainter *p, QPoint s, QPoint d, const char * text, bool isHighlighted)
 {
+	if (isHighlighted) {
+		p->setBrush(QColor(0, 0, 255));
+	}
+	else {
+		p->setBrush(QColor(255, 0, 0));
+	}
+
 	QPoint line = d - s;
 	float angle = atan2(line.y(), line.x());
 
@@ -74,7 +99,6 @@ void GraphVisualization::drawArrow(QPainter *p, QPoint s, QPoint d, const char *
 	QPoint newD = d - delta;
 
 	p->drawLine(newS, newD);
-
 
 	QPoint arr[3] = {
 			newD,

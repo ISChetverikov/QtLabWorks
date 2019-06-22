@@ -5,6 +5,7 @@
 #include <iostream>
 #include <QPoint>
 #include <QtGui>
+#include <QtLabWorks.h>
 #include "graphwidget.h"
 #include "graphwidget.cpp"
 #include "rasterwindow.h"
@@ -27,11 +28,10 @@ int main(int argc, char *argv[])
 	graph.AddEdge(Edge(Node(1), Node(5), 10));
 	graph.AddEdge(Edge(Node(5), Node(7), 4));
 
+	QApplication app(argc, argv);
 
-	QGuiApplication app(argc, argv);
+	QtLabWorks mainWin(graph, nullptr);
+	mainWin.show();
 
-	GraphVisualization graphVis(graph);
-
-	graphVis.show();
 	return app.exec();
 }
